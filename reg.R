@@ -24,6 +24,7 @@ zscorenorm <- function(x) {
 }
 
 
+
 getcoef <- function(x, y) {
   
   xc <- x - mean(x)
@@ -35,4 +36,4 @@ getcoef <- function(x, y) {
   
   
 }
-  
+
