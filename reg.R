@@ -22,4 +22,17 @@ zscorenorm <- function(x) {
   else
     return((x-mean(x, na.rm = T)) / sd(x, na.rm = T))
 }
+
+
+getcoef <- function(x, y) {
+  
+  xc <- x - mean(x)
+  yc <- y - mean(y)
+  xn <- xc / sd(x)
+  yn <- yc / sd(y)
+  return(coef(lm(yn ~ xn)))
+  
+  
+  
+}
   
