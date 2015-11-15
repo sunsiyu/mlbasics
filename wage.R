@@ -11,6 +11,7 @@ inTrain <- createDataPartition(y = Wage$wage, p = 0.7, list = F) # index of trai
 training <- Wage[inTrain, ]
 testing <- Wage[-inTrain, ]
 dim(training)
+
 # Lattice Plotting of Predictor Variables (feature plotting)
 featurePlot(x = training[, c("age", "jobclass", "education")], 
             y = training$wage, 
@@ -39,10 +40,22 @@ lm1 <- lm(wage ~ bsBasis, data = training)
 plot(training$age, training$wage, pch = 19, cex = 0.5)
 points(training$age, predict(lm1, newdata = training), col="red", pch = 19, cex = 0.5)
 
-p <- ggplot(training, aes(age, wage))
-p + geom_point() + geom_line(aes(y=predict(lm1, newdata = training)), color="red")
+p <- ggplot(training, aes(age, wage, color = education)) + geom_jitter()
+p + geom_line(aes(y=predict(lm1, newdata = training)), color="red")
+
+# Fit a linear model
+modFit <- train(wage ~ age + jobclass + education, method = "lm", data = training)
+finMod <- modFit$finalModel
+print(modFit)
+
+# Diagnositic Plot
+plot(finMod, 1, pch = 19, cex = 0.5, col = "#00000010") # can see outliers
+# find what influence outliers by plotting other variables
 
 
-
+# With all covariates
+modFitAll <- train(wage ~ ., method = "lm", data = training)
+pred <- predict(modFitAll, testing)
+qplot(wage, pred, data=testing)
 
 
