@@ -2,7 +2,7 @@ library(caret)
 library(kernlab)
 data(spam)  # spam email database from kernlab
 
-# Split training and testing dataset
+# Split to training and testing datasets
 inTrain <- createDataPartition(y = spam$type, p = 0.75, list = F)
 training <- spam[inTrain, ]
 testing <- spam[-inTrain, ]
@@ -64,8 +64,18 @@ testPC <- predict(preProc, log10(testing[, -58] + 1))
 confusionMatrix(testing$type, predict(modelFit, testPC))
 
 # Alternative to preprocess-train-modelfit
-modelFit <- train(training$type ~ ., metho="glm", preProcess="pca", data=training)
+modelFit <- train(training$type ~ ., method = "glm", preProcess="pca", data=training)
 confusionMatrix(testing$type, predict(modelFit, testing))
 
-
+# K-fold for cross-validation, return training set
+folds <- createFolds(y=spam$type, k=10, list=T, returnTrain=T)
+# return testing set
+folds <- createFolds(y=spam$type, k=10, list=T, returnTrain=F)
+# Re-sampling
+folds <- createResample(y=spam$type, times=10, list=T)
+# Time Series
+tme <- 1:1000
+folds <- createTimeSlices(y=tme, initialWindow = 20, horizon = 10)
+folds$train
+folds$test
 
