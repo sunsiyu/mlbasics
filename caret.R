@@ -1,24 +1,84 @@
 library(caret)
 library(kernlab)
-data(spam)
-# Split to training and testing set
-inTrain <- createDataPartition(y=spam$type, p=0.75, list=F)
-training <- spam[inTrain, ]  # 75%
-testing <- spam[-inTrain, ]  # 25%
+library(AppliedPredictiveModeling)
 
-modelFit <- train(type~., data=training, method="glm")
+#--------------------------- VISUALIZATION ------------------------------------#
+## Scatterplot Matrix
+transparentTheme(trans = 0.4)
+featurePlot(x = iris[, 1:4],
+            y = iris$Species, 
+            plot = "pairs", 
+            ## Add a key at the top
+            auto.key = list(columns = 3))
+
+## Scatterplot Matrix with Ellipses
+featurePlot(x = iris[, 1:4],
+            y = iris$Species,
+            plot = "ellipse",
+            ## Add a key at the top
+            auto.key = list(columns = 3))
+
+## Overlayed Density Plot
+transparentTheme(trans = 0.9)
+featurePlot(x = iris[, 1:4], 
+            y = iris$Species, 
+            plot = "density", 
+            ## Pass in options to xyplot() to make it prettier
+            scales = list(x = list(relation = "free"),
+                          y = list(relation = "free")),
+            adjust = 1.5,
+            pch = "|", 
+            layout = c(4, 1), 
+            auto.key = list(column = 3))
+
+## Box Plots
+featurePlot(x = iris[, 1:4], 
+            y = iris$Species, 
+            plot = "box", 
+            # Pass in options to bwplot()
+            scales = list(x = list(relation = "free"),
+                          y = list(rot = 90)),
+            layout = c(4, 1),
+            auto.key = list(column = 2))
 
 
-set.seed(32323)
-# K-fold for cross-validation, return training set
-folds <- createFolds(y=spam$type, k=10, list=T, returnTrain=T)
-# return testing set
-folds <- createFolds(y=spam$type, k=10, list=T, returnTrain=F)
-# Re-sampling
-folds <- createResample(y=spam$type, times=10, list=T)
-# Time Series
-tme <- 1:1000
-folds <- createTimeSlices(y=tme, initialWindow = 20, horizon = 10)
-folds$train
-folds$test
+## Scatter Plots
+library(mlbench)
+data(BostonHousing)
+regVar <- c("age", "lstat", "tax")
+str(BostonHousing[, regVar])
+theme1 <- trellis.par.get()
+theme1$plot.symbol$col = rgb(.2, .2, .2, .4)
+theme1$plot.symbol$pch = 16
+theme1$plot.line$col = rgb(1, 0, 0, .7)
+theme1$plot.line$lwd <- 2
+trellis.par.set(theme1)
+featurePlot(x = BostonHousing[, regVar],
+            y = BostonHousing$medv,
+            plot = "scatter",
+            layout = c(3, 1))
+# add a smoother
+featurePlot(x = BostonHousing[, regVar],
+            y = BostonHousing$medv,
+            plot = "scatter",
+            type = c("p", "smooth"),
+            span = .5,
+            layout = c(3, 1))
+
+#--------------------------- PRE-PROCESSING -----------------------------------#
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
