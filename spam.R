@@ -28,5 +28,44 @@ modelFit
 # Imputing Data, how to handle NAs
 preObj <- preProcess(training[, -58], method = "knnImpute")  # use knnImpute method
 
+# PCA
+M <- abs(cor(training[, -58]))
+diag(M) <- 0
+which(M > 0.8, arr.ind = T)
+names(spam)[c(34, 32)]
+plot(spam[, 34], spam[, 32])
+# weighted combination
+X <- 0.71 * training$num415 + 0.71 * training$num857
+Y <- 0.71 * training$num415 - 0.71 * training$num857
+plot(X, Y)
+
+# prcomp
+smallSpam <- spam[, c(34, 32)]
+prComp <- prcomp(smallSpam)
+plot(prComp$x[, 1], prComp$x[, 2])
+prComp$rotation
+# apply PCA on all SPAM data
+typeColor <- ((spam$type == "spam") * 1 + 1)
+prComp <- prcomp(log10(spam[, -58] + 1))
+plot(prComp$x[, 1], prComp$x[, 2], col=typeColor, xlab="PC1", ylab="PC2")
+
+preProc <- preProcess(log10(spam[, -58] + 1), method="pca", pcaComp = 2)
+spamPC <- predict(preProc, log10(spam[, -58] + 1))
+plot(spamPC[, 1], spamPC[, 2], col=typeColor)
+
+# Preprocessing training dataset with PCA
+preProc <- preProcess(log10(training[, -58] + 1), method = "pca", pcaComp = 2)
+trainPC <- predict(preProc, log10(training[, -58] + 1))
+# train training dataset(after preprocessing) with method glm
+modelFit <- train(training$type ~ ., method = "glm", data = trainPC)
+# testing dataset also needs preprocessing with PCA
+testPC <- predict(preProc, log10(testing[, -58] + 1))
+# confusion matrix for evaluation caret
+confusionMatrix(testing$type, predict(modelFit, testPC))
+
+# Alternative to preprocess-train-modelfit
+modelFit <- train(training$type ~ ., metho="glm", preProcess="pca", data=training)
+confusionMatrix(testing$type, predict(modelFit, testing))
+
 
 
