@@ -1,6 +1,8 @@
 library(dplyr)
 library(ggplot2)
 library(caret)
+library(randomForest)
+
 cclass <- c("NULL", "character", "character", "integer", "factor", "numeric", 
             "numeric", "integer", "numeric", "numeric", "numeric")
 
@@ -9,22 +11,40 @@ hoteldata <- read.table("BIdatachallenge/data_recruiting_bi_data_challenge.csv",
                    na.strings = c("NA", "na", "\"\""))
 
 hoteldata <- tbl_df(hoteldata)
-group_city_hoteldata <- group_by(hoteldata, city_id)
+by_city <- group_by(hoteldata, city_id)
 # add a new column representing the frequency of the city id
-citycount_all <- summarise(group_city_hoteldata, citycount = n())
-group_city_hoteldata <- left_join(group_city_hoteldata, citycount_all)
+citycount_all <- summarise(by_city, citycount = n())
+by_city <- left_join(by_city, citycount_all)
+# Filter all rows with missing clicks
 filtered <- filter(hoteldata, !is.na(clicks))
-group_city_filtered <- group_by(filtered, city_id)
+by_city_filtered <- group_by(filtered, city_id)
+resampled1 <- filter(filtered, clicks > 0)
+resampled2 <- filter(filtered, 
+                    clicks < 1, 
+                    !is.na(avg_price_hotel) |
+                    !is.na(rating) |
+                    !is.na(nmbr_partners_index) |
+                    !is.na(avg_rel_saving) |
+                    !is.na(avg_rank))
+resampled2 <- sample_frac(resampled2, 0.1)
 
-sum_filtered <- summarise(group_city_filtered, 
-                                citycount = n(),
-                                na.price = sum(is.na(avg_price_hotel)),
-                                na.rating = sum(is.na(rating)),
-                                na.index = sum(is.na(nmbr_partners_index)),
-                                na.saving = sum(is.na(avg_rel_saving)),
-                                na.rank = sum(is.na(avg_rank)))
-group_city_filtered <- left_join(group_city_filtered, sum_filtered)
+resampled <- rbind_list(resampled1, resampled2)
+by_city_resampled <- group_by(resampled, city_id)
+sum_resampled <- summarise(by_city_resampled,
+                          citycount = n(),
+                          na.price = sum(is.na(avg_price_hotel)),
+                          na.rating = sum(is.na(rating)),
+                          na.index = sum(is.na(nmbr_partners_index)),
+                          na.saving = sum(is.na(avg_rel_saving)),
+                          na.rank = sum(is.na(avg_rank)))
+resampled <- left_join(resampled, sum_resampled, by="city_id")
+resampled <- select(resampled, -hotel_id, -city_id)
+resampled <- na.roughfix(resampled)
 
+
+filtered <- left_join(filtered, sum_filtered, by="city_id")
+filtered <- select(filtered, -hotel_id, -city_id)
+filtered <- na.roughfix(filtered)
 ###############################################################################
 # check NA situation
 na_all <- summarise_each(hoteldata, funs(sum(is.na(.))))
@@ -36,6 +56,10 @@ df_nacount_all <- data.frame(varnames = names(na_all),
 df_nacount_filtered <- data.frame(varnames = names(na_filtered), 
                                   na.count = as.integer(na_filtered), 
                                   na.percent = as.integer(na_filtered)/nrow(filtered))
+
+
+
+
 # Fix missing values in avg_price_hotel
 MEAN_PRICE_ALL <- mean(filtered$avg_price_hotel, na.rm=T)
 
@@ -128,18 +152,49 @@ m <- select(m, c(hotel_id, avg_rank))
 # Integration
 select(x, avg_price_hotel)
 processed <- x %>% left_join(y) %>% left_join(z) %>% left_join(v) %>% left_join(m)
-rest <- select(filtered, c(hotel_id:distance_to_center, citycount))
+rest <- select(group_city_filtered, c(hotel_id:distance_to_center, citycount))
 processed <- left_join(rest, processed)
 
 ###############################################################################
-processed_noid <- processed[]
-
-inTrain <- createDataPartition(y = processed, )
-
+# resample click == 0
+resampled <- select(resampled, clicks:citycount)
 
 
+small_sample <- sample_n(resampled, 10000)
+predictors <- small_sample[, -1]
+labels <- small_sample[, 1]
+
+# Remove zero covariates (have one unique value, identify near 0 variance predictor)
+nsv <- nearZeroVar(training, saveMetrics = TRUE)
 
 
+modelFit <- train(clicks ~ ., data = training, preProcess=c("center", "scale"), method = "glm")
+
+set.seed(777)
+inTrain <- createDataPartition(y = small_sample$clicks, p = 0.7, list = F)
+training <- small_sample[inTrain, ]
+v_label_train <- labels[inTrain]
+testing <- small_sample[-inTrain, ]
+v_label_test <- labels[-inTrain]
+clicks.rf <- randomForest(x = training, 
+                          y = v_label_train, 
+                          xtest = testing, 
+                          ytest = v_label_test, 
+                          ntree = 500,
+                          do.trace = 5)
+
+
+
+
+  
+  
+  
+  modFit <- train(clicks ~ ., data = training, methods = "rf")
+
+
+
+  predictors <- select(filtered, stars:citycount)
+  labels <- filtered$clicks
 
 
 
