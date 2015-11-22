@@ -1,0 +1,143 @@
+---
+title: "coursera_predmachlearn-034_har"
+author: "Siyu Sun"
+date: "November 22, 2015"
+output: html_document
+---
+
+## Machine Learning Goal  
+  
+Classify activity class based on collected activity parameters.  
+(Data source:
+[Human Activity Recognition - HAR](http://groupware.les.inf.puc-rio.br/har))
+
+
+```{r setup, echo = T}
+library(ggplot2)
+library(dplyr)
+library(caret)
+set.seed(1122)
+```
+
+
+## Load Data  
+  
+Load training and testing data from `.csv` files.  
+
+* use `read.csv()`  
+* na.strings include `"NA"` and `"#DIV/0!"`  
+* first 5 columns can be removed since irrelavent to final prediction  
+* convert to `dplyr::tbl_df()` more convenient to manipulate  
+
+```{r, echo = T}
+training <- read.csv("pml-training.csv", 
+                     na.strings = c("#DIV/0!", "NA", "na"))[, -(1:5)]
+testing <- read.csv("pml-testing.csv", 
+                    na.strings = c("#DIV/0!", "NA", "na"))[, -(1:5)]
+training <- tbl_df(training)
+testing <- tbl_df(testing)
+by_class <- group_by(training, classe)
+
+```
+
+Dimension of training set is `r nrow(training)` observations x 
+`r ncol(training)` variables(features).   
+
+## Data Clean  
+
+Perform data cleaning:  
+
+* Remove feature with `NA` percentage over 90%, relative meaningless to use.
+* Check zero covariates in remaining variables, and remove near zero covariate.
+  
+```{r, echo = T}
+nsv <- nearZeroVar(training, saveMetrics = TRUE)
+training <- training[, !names(training) %in% rownames(nsv[nsv$nzv,])]
+testing <- testing[, !names(testing) %in% rownames(nsv[nsv$nzv,])]
+
+```
+
+
+## Preprocess
+
+Perform pre-processing:  
+
+* principle component analysis, down to 20 components
+* Standardization (normalization)
+* Imputation (however no need in this case)
+
+```{r, echo = T}
+preObj <- preProcess(training[, -54], method = c("center", "scale"))
+training <- predict(preObj, training[, -54])
+testing <- predict(preObj, testing[, -54])
+training$classe <- by_class$classe
+
+```
+
+## Training
+  
+Perform model training, model selection:  
+
+* suitable for classification (probabily non-linear)
+* relative fast (scalable to >10000 obs with `R`)
+
+
+
+```{r, echo = T}
+inTrain <- createDataPartition(training$classe, p = 0.7, list = F)
+trainset <- training[inTrain, ]
+testset <- training[-inTrain, ]
+# Try different models
+# modFit1 <- train(classe ~ ., method = "glm", data = trainset)
+modFit2 <- train(classe ~ ., method = "lda", data = trainset)
+# etc...
+
+# Random Forest
+class.rf <- randomForest(x = trainset[, -21], 
+                         y = trainset[, 21], 
+                         xtest = testset[, -21], 
+                         ytest = testset[, 21], 
+                         ntree = 100,
+                         mtry = 5,
+                         do.trace = 5,
+                         keep.forest=TRUE)
+
+
+```
+
+
+## Evaluation
+
+After a few tests on different models, I decide to use Random Forest after 
+seeing the model performance.  
+
+```{r, echo = T}
+print(modFit2)
+print(class.rf)
+table(class.rf$y, trainset[, 21])
+table(prediction, testset[, 21])
+
+```
+  
+  
+## Predict
+  
+Predict the random forest model on the testing data set with 20 observations.  
+
+```{r, echo = T}
+prediction <- predict(class.rf, newdata = testing[, -21])
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
