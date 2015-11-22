@@ -51,5 +51,23 @@ getinfogain <- function(p, e=1, deviance = F)
     return (e - sum(-p_rest * log(p_rest)))
   else
     return (e - sum(-p_rest * log2(p_rest)))
+}
 
+
+#' Function to calculate Gini Index
+#' 
+#' Calculate Gini index
+#' @param p numeric vector, each element indicates the corresponding probability
+#' @return a numeric value, the gini index, measure of impurity
+#' @author Siyu Sun (sunsiyu.tud@gmail.com)
+#' @examples 
+#' e <- getgini(p=c(0.1, 0.9))
+getinfogain <- function(p) 
+{
+  stopifnot(!is.null(p))
+  stopifnot(is.numeric(p))
+  if (sum(p) != 1)
+    stop("The sum of all probability should be equal to 1!")
+  
+  return (1-sum(p*p))
 }
