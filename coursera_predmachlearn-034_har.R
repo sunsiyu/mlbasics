@@ -64,11 +64,27 @@ class.rf <- randomForest(x = trainset[, -21],
 print(class.rf)
 table(class.rf$y, trainset[, 21])
 
-### Predict ###
-prediction <- predict(class.rf, newdata = testing)
 
 ### Evaluation ###
 # print(modFit2)
 print(class.rf)
-table(class.rf$y, trainset[, 21])
-table(prediction, testset[, 21])
+insample <- table(class.rf$y, trainset[, 21])
+y_testset <- predict(class.rf, newdata = testset[, -21])
+outsample <- table(y_testset, testset[, 21])
+
+# In sample error
+err_insample <- vector("numeric", 5)
+for (i in 1:5)
+  err_insample[i] <- sum(insample[i,-i])
+err_insample <- sum(err_insample) / sum(insample)
+
+
+# Out of sample error
+err_outsample <- vector("numeric", 5)
+for (i in 1:5)
+  err_outsample[i] <- sum(outsample[i,-i])
+err_outsample <- sum(err_outsample) / sum(outsample)
+
+
+### Predict ###
+prediction <- predict(class.rf, newdata = testing)
