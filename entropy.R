@@ -22,11 +22,11 @@ getentropy <- function(p)
     return (sum(-p_rest * log2(p_rest)))
 }
 
-#' Function to calculate Information Gain
+#' Function to calculate Information Gain/Deviance
 #' 
-#' Calculate Information Gain based on supplied previously calculated entropy 
-#' and a numeric vector representing the probability of each partitioned 
-#'  attribute value.
+#' Calculate Information Gain or Deviance based on supplied previously 
+#'  calculated entropy and a numeric vector representing the probability of 
+#'  each partitioned attribute value.
 #' @param p numeric vector, each element indicates the corresponding probability
 #' @param e numeric value of previously calcuated entropy, default is 1
 #' @return a numeric value, the information gain, higher means more info, better 
@@ -34,7 +34,7 @@ getentropy <- function(p)
 #' @author Siyu Sun (sunsiyu.tud@gmail.com)
 #' @examples 
 #' e <- getinfogain(p=c(0.1, 0.9), e=1)
-getinfogain <- function(p, e=1) 
+getinfogain <- function(p, e=1, deviance = F) 
 {
   stopifnot((!is.null(p)) && (!is.null(e)) )
   stopifnot(is.numeric(p) && is.numeric(e))
@@ -46,6 +46,10 @@ getinfogain <- function(p, e=1)
   
   if (length(p_rest) < 1)
     return (e - numeric(0))
+  
+  if (deviance)
+    return (e - sum(-p_rest * log(p_rest)))
   else
     return (e - sum(-p_rest * log2(p_rest)))
+
 }
