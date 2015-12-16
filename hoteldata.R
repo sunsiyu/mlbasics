@@ -105,6 +105,10 @@ v_label_train <- part[inTrain, 1]
 testing <- part[-inTrain, -1]
 v_label_test <- part[-inTrain, 1]
 
+# ===================
+# CROSS VALIDATION
+# ===================
+
 
 # ===================
 # TRAINING
@@ -124,3 +128,5 @@ clicks.rf <- randomForest(x = training,
 prediction <- predict(clicks.rf, newdata = submission)
 result <- data.frame(hotel_id = submission_hotelid, clicks = prediction)
 write.csv(result, "predict.csv", row.names = F)
+
+
