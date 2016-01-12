@@ -1,6 +1,7 @@
 library(caret)
 library(kernlab)
 library(AppliedPredictiveModeling)
+library(MASS)
 
 #--------------------------- VISUALIZATION ------------------------------------#
 ## Scatterplot Matrix
@@ -68,9 +69,31 @@ featurePlot(x = BostonHousing[, regVar],
 #--------------------------- PRE-PROCESSING -----------------------------------#
 
 
+## near zero variance (nzv)
+# German Credit Data in the caret pkg, source: UCI ML Repo
+data(GermanCredit)
+
+# Try to use Linear Discriminant Analysis (lda) will lead to error
+m1 = lda(formula = Class ~ ., data = GermanCredit)
+# Error in lda.default(x, grouping, ...) : 
+# variables 26 44 appear to be constant within groups
+
+table(GermanCredit[,27])
+table(GermanCredit[,45])
+
+df_nzv <- nzv(GermanCredit, saveMetrics = T)
+# nzv(GermanCredit)             # only gives the col number
+# nzv(GermanCredit, names = T)  # only gives the col names
+
+df_nzv[df_nzv$zeroVar == TRUE, ]
+df_nzv[df_nzv$nzv == TRUE, ]
 
 
-
+# However, be careful with throwing out features that are nzv
+# link: http://www.r-bloggers.com/near-zero-variance-predictors-should-we-remove-them/
+# Alternatives:
+# - penalized likelihood solution
+# - use a well designed Bayesian model 
 
 
 
