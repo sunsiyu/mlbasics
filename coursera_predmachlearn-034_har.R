@@ -36,6 +36,8 @@ prComp <- prcomp(training[, -54])
 prePCA <- preProcess(training[, -54], method = "pca", pcaComp = 20)
 training <- predict(prePCA, training[, -54])
 testing <- predict(prePCA, testing[, -54])
+
+
 # Standardization and no need for imputation
 preObj <- preProcess(training[, -54], method = c("center", "scale"))
 training <- predict(preObj, training[, -54])
